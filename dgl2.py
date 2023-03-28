@@ -35,7 +35,9 @@ loading_thread.start()
 dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
                      "parse-data/newmatches2.json", "parse-data/newmatches3.json",
                      "parse-data/newmatches4.json",
-                     "parse-data/dataset1.json"]
+                     "parse-data/dataset1.json", "parse-data/dataset2.json",
+                     "parse-data/newmatches5.json"]
+
 # Stop loading animation
 stop_loading_animation.set()
 loading_thread.join()
