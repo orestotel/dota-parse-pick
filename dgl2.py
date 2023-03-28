@@ -31,23 +31,11 @@ loading_thread = threading.Thread(target=loading_animation, args=(stop_loading_a
 loading_thread.start()
 
 # Load all datasets
-def get_all_json_files(directory):
-    return glob.glob(f"{directory}/*.json")
-
-# Prompt the user to choose between hardcoded dataset or loading all JSON files
-dataset_choice = input("Enter '1' to use the hardcoded dataset or '2' to load all JSON files from 'parse-data' directory: ")
-
-if dataset_choice == '1':
-    dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
-                         "parse-data/newmatches2.json", "parse-data/newmatches3.json",
-                         "parse-data/newmatches4.json",
-                         "parse-data/dataset1.json"]
-elif dataset_choice == '2':
-    dataset_filenames = get_all_json_files("parse-data")
-else:
-    print("Invalid input. Exiting.")
-    sys.exit(1)
-
+# Load all datasets
+dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
+                     "parse-data/newmatches2.json", "parse-data/newmatches3.json",
+                     "parse-data/newmatches4.json",
+                     "parse-data/dataset1.json"]
 # Stop loading animation
 stop_loading_animation.set()
 loading_thread.join()
