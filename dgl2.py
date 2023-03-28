@@ -13,6 +13,8 @@ from tqdm import tqdm
 import sys
 import threading
 import time
+import glob
+
 
 def loading_animation(stop_event):
     animation_chars = "|/-\\"
@@ -29,10 +31,23 @@ loading_thread = threading.Thread(target=loading_animation, args=(stop_loading_a
 loading_thread.start()
 
 # Load all datasets
-dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
-                     "parse-data/newmatches2.json", "parse-data/newmatches3.json",
-                     "parse-data/newmatches4.json",
-                     "parse-data/dataset1.json"]
+def get_all_json_files(directory):
+    return glob.glob(f"{directory}/*.json")
+
+# Prompt the user to choose between hardcoded dataset or loading all JSON files
+dataset_choice = input("Enter '1' to use the hardcoded dataset or '2' to load all JSON files from 'parse-data' directory: ")
+
+if dataset_choice == '1':
+    dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
+                         "parse-data/newmatches2.json", "parse-data/newmatches3.json",
+                         "parse-data/newmatches4.json",
+                         "parse-data/dataset1.json"]
+elif dataset_choice == '2':
+    dataset_filenames = get_all_json_files("parse-data")
+else:
+    print("Invalid input. Exiting.")
+    sys.exit(1)
+
 # Stop loading animation
 stop_loading_animation.set()
 loading_thread.join()
@@ -50,10 +65,9 @@ loading_thread = threading.Thread(target=loading_animation, args=(stop_loading_a
 loading_thread.start()
 
 
-for filename in dataset_filenames:
+for filename in tqdm(dataset_filenames, desc="Loading datasets"):
     with open(filename, "r") as file:
         data.extend(json.load(file))
-
 
 
 
@@ -168,18 +182,23 @@ def evaluate(X_test, y_test, model):
 
 # Load the model with a loading bar
 def load_model_with_loading_bar(model_filename):
-    model = None
-    with tqdm(total=1, desc="Loading model", ncols=80) as pbar:
-        if os.path.exists(model_filename):
-            with open(model_filename, 'rb') as file:
-                model = pickle.load(file)
-            pbar.update(1)
+    try:
+        with open(model_filename, "rb") as file:
+            model = pickle.load(file)
+    except EOFError:
+        print("Error: The model file is empty or corrupted.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
     return model
+
+
 
 #if specified same name and trained new model models will overwrite
 #to train new model change name beforehand
 #careful!
-print("#if specified same name and trained new model models will overwrite /n to train new model change name beforehand /n careful!")
+print("#if specified same name and trained new model models will overwrite \n to train new model change name beforehand \n careful!")
 model_filename = "models/bigmodel2.pkl"
 
 
@@ -264,5 +283,3 @@ result_label.grid(row=6, column=1, padx=10, pady=10)
 
 # Start the GUI
 root.mainloop()
-
-
