@@ -169,12 +169,21 @@ sys.stdout.flush()
 
 
 # Training
-def train(X_train, y_train, num_epochs=1000, hidden_size=321, starting_epoch=0, pretrained_model=None):
+from torch.utils.tensorboard import SummaryWriter
+
+def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0, pretrained_model=None, log_dir="runs"):
     input_size = len(heroes) * 2
     num_classes = 2
     model = pretrained_model if pretrained_model else FNNModel(input_size, hidden_size, num_classes)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
+
+    # Ask the user if they want to use TensorBoard
+    use_tensorboard = input("Do you want to use TensorBoard for visualization? (y/n): ").lower() == 'y'
+
+    if use_tensorboard:
+        # Create TensorBoard writer
+        writer = SummaryWriter(log_dir=log_dir)
 
     for epoch in range(starting_epoch, num_epochs):
         optimizer.zero_grad()
@@ -183,14 +192,23 @@ def train(X_train, y_train, num_epochs=1000, hidden_size=321, starting_epoch=0, 
         loss.backward()
         optimizer.step()
 
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 2 == 0:
             print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}")
+
+        if use_tensorboard:
+            # Log loss and model graph to TensorBoard
+            writer.add_scalar("Loss/train", loss, epoch)
+            if epoch == starting_epoch:
+                writer.add_graph(model, X_train)
 
         # Save the model after every 100 epochs
         if (epoch + 1) % 100 == 0:
             model_save_path = f"models/intermediate_model_epoch_{epoch + 1}.pkl"
             with open(model_save_path, 'wb') as file:
                 pickle.dump(model, file)
+
+    if use_tensorboard:
+        writer.close()
 
     return model
 
