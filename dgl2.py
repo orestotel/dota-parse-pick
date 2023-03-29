@@ -14,6 +14,7 @@ import sys
 import threading
 import time
 import glob
+import combine_files
 
 
 def loading_animation(stop_event):
