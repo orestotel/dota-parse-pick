@@ -106,14 +106,39 @@ class FNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
         super().__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, num_classes)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.relu2 = nn.ReLU()
+        self.fc3 = nn.Linear(hidden_size, hidden_size)
+        self.relu3 = nn.ReLU()
+        self.fc4 = nn.Linear(hidden_size, hidden_size)
+        self.relu4 = nn.ReLU()
+        self.fc5 = nn.Linear(hidden_size, hidden_size)
+        self.relu5 = nn.ReLU()
+        self.fc6 = nn.Linear(hidden_size, hidden_size)
+        self.relu6 = nn.ReLU()
+        self.fc7 = nn.Linear(hidden_size, hidden_size)
+        self.relu7 = nn.ReLU()
+        self.fc8 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
         x = self.fc1(x)
-        x = self.relu(x)
+        x = self.relu1(x)
         x = self.fc2(x)
+        x = self.relu2(x)
+        x = self.fc3(x)
+        x = self.relu3(x)
+        x = self.fc4(x)
+        x = self.relu4(x)
+        x = self.fc5(x)
+        x = self.relu5(x)
+        x = self.fc6(x)
+        x = self.relu6(x)
+        x = self.fc7(x)
+        x = self.relu7(x)
+        x = self.fc8(x)
         return x
+
 
 
 # Convert data to tensors
@@ -126,7 +151,8 @@ def data_to_tensor(data):
         for idx, hero_idx in enumerate(dire_team):
             vector[hero_idx + len(heroes)] = 1
         tensor_data.append(vector)
-    return torch.tensor(tensor_data, dtype=torch.float32)
+    return torch.tensor(np.array(tensor_data), dtype=torch.float32)
+
 
 # Start loading animation
 stop_loading_animation = threading.Event()
@@ -146,7 +172,7 @@ sys.stdout.flush()
 
 
 # Training
-def train(X_train, y_train, num_epochs=7600, hidden_size=158):
+def train(X_train, y_train, num_epochs=20000, hidden_size=408):
     input_size = len(heroes) * 2
     num_classes = 2
     model = FNNModel(input_size, hidden_size, num_classes).to(device)
@@ -195,7 +221,7 @@ def load_model_with_loading_bar(model_filename):
 #to train new model change name beforehand
 #careful!
 print("#if specified same name and trained new model models will overwrite \n to train new model change name beforehand \n careful!")
-model_filename = "models/bigmodel2.pkl"
+model_filename = "models/bigmodel3.pkl"
 
 
 
