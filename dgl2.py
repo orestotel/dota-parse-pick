@@ -15,6 +15,7 @@ import threading
 import time
 import glob
 import combine_files
+import training_module
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -35,11 +36,7 @@ loading_thread.start()
 
 # Load all datasets
 # Load all datasets
-dataset_filenames = ["parse-data/bigflow.json", "parse-data/newmatches1.json",
-                     "parse-data/newmatches2.json", "parse-data/newmatches3.json",
-                     "parse-data/newmatches4.json",
-                     "parse-data/dataset1.json", "parse-data/dataset2.json",
-                     "parse-data/newmatches5.json"]
+dataset_filenames = ["parse-data/batches/bubblegum1.json"]
 
 # Stop loading animation
 stop_loading_animation.set()
@@ -232,16 +229,17 @@ user_choice = input("\nEnter '1' to use the hardcoded trained model, '2' to crea
 if user_choice == '1':
     model = load_model_with_loading_bar(model_filename)
 elif user_choice == '2':
-    model = train(X_train_tensor, y_train_tensor)
+    model = training_module.train(X_train_tensor, y_train_tensor)
     with open(model_filename, 'wb') as file:
         pickle.dump(model, file)
 elif user_choice == '3':
     # Load the saved model and starting_epoch
-    starting_epoch = int(input("Enter the starting epoch: "))
+    starting_epoch = int(input("Enter the starting epoch from 10000: "))
     model = load_model_with_loading_bar(model_filename)
 
     # Resume training
-    model = train(X_train_tensor, y_train_tensor, num_epochs=7600, hidden_size=158, starting_epoch=starting_epoch, pretrained_model=model)
+    model = training_module.train(X_train_tensor, y_train_tensor, num_epochs=10000, hidden_size=321,
+                                  starting_epoch=starting_epoch, pretrained_model=model)
     with open(model_filename, 'wb') as file:
         pickle.dump(model, file)
 else:
