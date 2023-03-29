@@ -24,18 +24,22 @@ def generate_summary_report(output_filename):
     data = parse_data('parse-data') + parse_data('parse-data/batches')
     num_matches = len(data)
 
-    mmrs = np.array([match['mmr'] for match in data])
+    mmrs = np.array([match.get('mmr', 0) for match in data])  # Use a default value of 0 if 'mmr' is not present
     max_mmr, min_mmr, avg_mmr = mmrs.max(), mmrs.min(), mmrs.mean()
 
     heroes_data = {}
     for match in data:
         radiant_win = match['radiant_win']
-        for hero_id in match['picks']:
+        radiant_picks = match['radiant_team']
+        dire_picks = match['dire_team']
+        all_picks = radiant_picks + dire_picks
+
+        for hero_id in all_picks:
             if hero_id not in heroes_data:
                 heroes_data[hero_id] = {'picks': 0, 'wins': 0}
 
             heroes_data[hero_id]['picks'] += 1
-            if (hero_id in match['radiant_picks']) == radiant_win:
+            if (hero_id in radiant_picks) == radiant_win:
                 heroes_data[hero_id]['wins'] += 1
 
     hero_pickrates = np.array([heroes_data[hero_id]['picks'] for hero_id in heroes_data])
