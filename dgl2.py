@@ -111,7 +111,7 @@ class FNNModel(nn.Module):
         self.relu2 = nn.ReLU()
         self.fc3 = nn.Linear(hidden_size, hidden_size)
         self.relu3 = nn.ReLU()
-        self.fc4 = nn.Linear(hidden_size, hidden_size)
+        self.fc4 = nn.Linear(hidden_size, 1000)
         self.relu4 = nn.ReLU()
         self.fc5 = nn.Linear(hidden_size, hidden_size)
         self.relu5 = nn.ReLU()
@@ -172,16 +172,14 @@ sys.stdout.flush()
 
 
 # Training
-def train(X_train, y_train, num_epochs=20000, hidden_size=408):
+def train(X_train, y_train, num_epochs=7600, hidden_size=321, starting_epoch=0, pretrained_model=None):
     input_size = len(heroes) * 2
     num_classes = 2
-    model = FNNModel(input_size, hidden_size, num_classes).to(device)
+    model = pretrained_model if pretrained_model else FNNModel(input_size, hidden_size, num_classes)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    X_train, y_train = X_train.to(device), y_train.to(device)
-
-    for epoch in range(num_epochs):
+    for epoch in range(starting_epoch, num_epochs):
         optimizer.zero_grad()
         outputs = model(X_train)
         loss = criterion(outputs, y_train)
@@ -190,6 +188,12 @@ def train(X_train, y_train, num_epochs=20000, hidden_size=408):
 
         if (epoch + 1) % 10 == 0:
             print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}")
+
+        # Save the model after every 100 epochs
+        if (epoch + 1) % 100 == 0:
+            model_save_path = f"models/intermediate_model_epoch_{epoch + 1}.pkl"
+            with open(model_save_path, 'wb') as file:
+                pickle.dump(model, file)
 
     return model
 
@@ -221,18 +225,23 @@ def load_model_with_loading_bar(model_filename):
 #to train new model change name beforehand
 #careful!
 print("#if specified same name and trained new model models will overwrite \n to train new model change name beforehand \n careful!")
-model_filename = "models/bigmodel3.pkl"
+model_filename = "models/bigmodel33chongus.pkl"
 
-
-
-user_choice = input("\nEnter '1' to use the hardcoded trained model, '2' to create and use a new model: ")
-
-
+user_choice = input("\nEnter '1' to use the hardcoded trained model, '2' to create and use a new model, '3' to continue training hardcoded model: ")
 
 if user_choice == '1':
     model = load_model_with_loading_bar(model_filename)
 elif user_choice == '2':
     model = train(X_train_tensor, y_train_tensor)
+    with open(model_filename, 'wb') as file:
+        pickle.dump(model, file)
+elif user_choice == '3':
+    # Load the saved model and starting_epoch
+    starting_epoch = int(input("Enter the starting epoch: "))
+    model = load_model_with_loading_bar(model_filename)
+
+    # Resume training
+    model = train(X_train_tensor, y_train_tensor, num_epochs=7600, hidden_size=158, starting_epoch=starting_epoch, pretrained_model=model)
     with open(model_filename, 'wb') as file:
         pickle.dump(model, file)
 else:
