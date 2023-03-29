@@ -59,8 +59,8 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file):
 
 if __name__ == "__main__":
     api_key = "2a5b8577-d7ee-4ef2-85ca-f15e5c8bdf75"  # Replace with your OpenDota API key
-    n_matches = 1700000
-    min_mmr = 1000
-    output_file = "parse-data/dataset6basic.json"
+    n_matches = 1750000
+    min_mmr = 20
+    output_file = "parse-data/dataset7basic.json"
 
     fetch_and_save_matches(api_key, n_matches, min_mmr, output_file)
