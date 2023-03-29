@@ -172,7 +172,7 @@ sys.stdout.flush()
 
 
 # Training
-def train(X_train, y_train, num_epochs=7600, hidden_size=321, starting_epoch=0, pretrained_model=None):
+def train(X_train, y_train, num_epochs=1000, hidden_size=321, starting_epoch=0, pretrained_model=None):
     input_size = len(heroes) * 2
     num_classes = 2
     model = pretrained_model if pretrained_model else FNNModel(input_size, hidden_size, num_classes)
