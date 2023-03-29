@@ -51,7 +51,8 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file):
 
                 pbar.update(1)
 
-            matches_url = f"https://api.opendota.com/api/publicMatches?api_key={api_key}&less_than_match_id={matches[-1]['match_id']}"
+            matches_url = f"https://api.opendota.com/api/publicMatches?api_key={api_key}&mmr_ascending={min_mmr}&sort=start_time&order=desc"
+
             time.sleep(0.01)
 
     save_matches_to_file(output_file, matches)
