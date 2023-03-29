@@ -16,6 +16,8 @@ import time
 import glob
 import combine_files
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
 def loading_animation(stop_event):
     animation_chars = "|/-\\"
@@ -147,9 +149,11 @@ sys.stdout.flush()
 def train(X_train, y_train, num_epochs=7600, hidden_size=158):
     input_size = len(heroes) * 2
     num_classes = 2
-    model = FNNModel(input_size, hidden_size, num_classes)
+    model = FNNModel(input_size, hidden_size, num_classes).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
+
+    X_train, y_train = X_train.to(device), y_train.to(device)
 
     for epoch in range(num_epochs):
         optimizer.zero_grad()
@@ -162,6 +166,7 @@ def train(X_train, y_train, num_epochs=7600, hidden_size=158):
             print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}")
 
     return model
+
 
 # Evaluation
 def evaluate(X_test, y_test, model):
@@ -213,11 +218,11 @@ def predict(model, radiant_team, dire_team):
     radiant_team_idx = [hero_to_idx[hero] for hero in radiant_team]
     dire_team_idx = [hero_to_idx[hero] for hero in dire_team]
     input_data = [(radiant_team_idx, dire_team_idx)]
-    input_tensor = data_to_tensor(input_data)
+    input_tensor = data_to_tensor(input_data).to(device)
     with torch.no_grad():
         outputs = model(input_tensor)
         probabilities = torch.softmax(outputs, dim=1)
-        return probabilities.numpy()[0]
+        return probabilities.cpu().numpy()[0]
 
 def predict_callback():
     radiant_team = [rt_hero1.get(), rt_hero2.get(), rt_hero3.get(), rt_hero4.get(), rt_hero5.get()]
