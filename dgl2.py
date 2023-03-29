@@ -111,7 +111,7 @@ class FNNModel(nn.Module):
         self.relu2 = nn.ReLU()
         self.fc3 = nn.Linear(hidden_size, hidden_size)
         self.relu3 = nn.ReLU()
-        self.fc4 = nn.Linear(hidden_size, 1000)
+        self.fc4 = nn.Linear(hidden_size, hidden_size)
         self.relu4 = nn.ReLU()
         self.fc5 = nn.Linear(hidden_size, hidden_size)
         self.relu5 = nn.ReLU()
