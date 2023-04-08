@@ -17,7 +17,8 @@ import glob
 import combine_files
 import training_module
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+
 print(f"Using device: {device}")
 
 def loading_animation(stop_event):
@@ -156,10 +157,11 @@ stop_loading_animation = threading.Event()
 loading_thread = threading.Thread(target=loading_animation, args=(stop_loading_animation,))
 loading_thread.start()
 
-X_train_tensor = data_to_tensor(X_train)
-X_test_tensor = data_to_tensor(X_test)
-y_train_tensor = torch.tensor(y_train, dtype=torch.long)
-y_test_tensor = torch.tensor(y_test, dtype=torch.long)
+X_train_tensor = data_to_tensor(X_train).to(device)
+X_test_tensor = data_to_tensor(X_test).to(device)
+y_train_tensor = torch.tensor(y_train, dtype=torch.long).to(device)
+y_test_tensor = torch.tensor(y_test, dtype=torch.long).to(device)
+
 
 # Stop loading animation
 stop_loading_animation.set()
@@ -172,9 +174,14 @@ sys.stdout.flush()
 from torch.utils.tensorboard import SummaryWriter
 
 def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0, pretrained_model=None, log_dir="runs"):
+    X_train = X_train.to(device)
+    y_train = y_train.to(device)
     input_size = len(heroes) * 2
     num_classes = 2
-    model = pretrained_model if pretrained_model else FNNModel(input_size, hidden_size, num_classes)
+    model = pretrained_model.to(device) if pretrained_model else FNNModel(input_size, hidden_size, num_classes).to(device)
+    model = model.to(device)  # Add this line
+    print(model)
+
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
@@ -204,6 +211,7 @@ def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0,
         # Save the model after every 100 epochs
         if (epoch + 1) % 100 == 0:
             model_save_path = f"models/intermediate_model_epoch_{epoch + 1}.pkl"
+            #model_save_path = f"models/intermediate_model_epoch.pkl"
             with open(model_save_path, 'wb') as file:
                 pickle.dump(model, file)
 
@@ -215,6 +223,8 @@ def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0,
 
 # Evaluation
 def evaluate(X_test, y_test, model):
+    X_test = X_test.to(device)
+    y_test = y_test.to(device)
     with torch.no_grad():
         outputs = model(X_test)
         _, predicted = torch.max(outputs.data, 1)
@@ -240,7 +250,7 @@ def load_model_with_loading_bar(model_filename):
 #to train new model change name beforehand
 #careful!
 print("#if specified same name and trained new model models will overwrite \n to train new model change name beforehand \n careful!")
-model_filename = "models/bigmodel33chongus.pkl"
+model_filename = "models/intermediate_model_epoch_1500.pkl"
 
 user_choice = input("\nEnter '1' to use the hardcoded trained model, '2' to create and use a new model, '3' to continue training hardcoded model: ")
 
@@ -273,7 +283,7 @@ def predict(model, radiant_team, dire_team):
     with torch.no_grad():
         outputs = model(input_tensor)
         probabilities = torch.softmax(outputs, dim=1)
-        return probabilities.cpu().numpy()[0]
+        return probabilities.device().numpy()[0]
 
 def predict_callback():
     radiant_team = [rt_hero1.get(), rt_hero2.get(), rt_hero3.get(), rt_hero4.get(), rt_hero5.get()]
