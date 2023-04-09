@@ -298,6 +298,8 @@ def predict_callback():
     probabilities = predict(model, radiant_team, dire_team)
     radiant_win_probability = probabilities[1] * 100
     result_text.set(f"Radiant Win Chance: {radiant_win_probability:.2f}%")
+    print(f"Radiant Win Chance: {radiant_win_probability:.2f}%")
+
 
 
 root = tk.Tk()
