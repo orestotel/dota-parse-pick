@@ -1,6 +1,12 @@
 import requests
 import torch
 from torch_geometric.data import Data
+import json
+
+def load_heroes():
+    with open("parse-data/heroes.json") as f:
+        heroes = json.load(f)
+    return heroes
 
 
 def fetch_heroes():
