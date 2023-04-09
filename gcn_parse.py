@@ -9,6 +9,9 @@ def load_heroes():
     hero_to_idx = {hero: idx for idx, hero in enumerate(heroes)} # dict
     return hero_to_idx # dict
 
+def recursionlimit():
+    import sys
+    sys.setrecursionlimit(10000)
 
 
 def parse_data(json_file): # json file
@@ -16,8 +19,12 @@ def parse_data(json_file): # json file
         json_file = 'parse-data/bubblegum1.json' # json file
         dataset = parse_data(json_file) # list of dicts
 
+
+
+
     hero_to_idx = load_heroes()
     data_list = []
+
 
     for match in dataset:
         nodes = []
@@ -42,6 +49,9 @@ def parse_data(json_file): # json file
         data_list.append(data)
 
     return data_list
+
+
+
 
 if __name__ == "__main__":
     json_file = 'parse-data/bubblegum1.json'
