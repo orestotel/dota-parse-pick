@@ -1,30 +1,28 @@
-import json
+import requests
 import torch
 from torch_geometric.data import Data
-from collections import defaultdict
-
-def load_heroes():
-    # Load hero names and indices from an external source or define them manually
-    heroes = ["Lich", "Phantom Assassin", "Arc Warden", ...] # list
-    hero_to_idx = {hero: idx for idx, hero in enumerate(heroes)} # dict
-    return hero_to_idx # dict
-
-def recursionlimit():
-    import sys
-    sys.setrecursionlimit(10000)
 
 
-def parse_data(json_file): # json file
-    with open(json_file, 'r') as f: # open json file
-        json_file = 'parse-data/bubblegum1.json' # json file
-        dataset = parse_data(json_file) # list of dicts
+def fetch_heroes():
+    # Fetch the list of all heroes and their IDs from the OpenDota API
+    response = requests.get('https://api.opendota.com/api/heroes')
+    heroes_data = response.json()
+
+    # Create a dictionary that maps hero names to indices
+    hero_to_idx = {}
+    for idx, hero in enumerate(heroes_data, start=1):
+        hero_name = hero['localized_name']
+        hero_to_idx[hero_name] = idx
+
+    return hero_to_idx
 
 
+def parse_data(json_file):
+    with open(json_file, 'r') as f:
+        dataset = json.load(f)
 
-
-    hero_to_idx = load_heroes()
+    hero_to_idx = fetch_heroes()
     data_list = []
-
 
     for match in dataset:
         nodes = []
@@ -41,7 +39,7 @@ def parse_data(json_file): # json file
         for i, (src_team, src_idx) in enumerate(edges):
             for j, (dst_team, dst_idx) in enumerate(edges):
                 if i != j and src_team == dst_team:
-                    edge_index.append((src_idx, dst_idx))
+                    edge_index.append((src_idx - 1, dst_idx - 1))  # Subtract 1 to adjust for 0-based indexing
 
         edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
         x = torch.tensor(nodes, dtype=torch.long).view(-1, 1)
@@ -49,11 +47,3 @@ def parse_data(json_file): # json file
         data_list.append(data)
 
     return data_list
-
-
-
-
-if __name__ == "__main__":
-    json_file = 'parse-data/bubblegum1.json'
-    data_list = parse_data(json_file)
-    print(data_list)
