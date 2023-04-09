@@ -17,7 +17,8 @@ import glob
 import combine_files
 import training_module
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 print(f"Using device: {device}")
 
@@ -178,8 +179,10 @@ def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0,
     y_train = y_train.to(device)
     input_size = len(heroes) * 2
     num_classes = 2
-    model = pretrained_model.to(device) if pretrained_model else FNNModel(input_size, hidden_size, num_classes).to(device)
+    model = pretrained_model.to(device) if pretrained_model else FNNModel(input_size, hidden_size, num_classes).to(
+        device)
     model = model.to(device)  # Add this line
+
     print(model)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -222,14 +225,15 @@ def train(X_train, y_train, num_epochs=10000, hidden_size=321, starting_epoch=0,
 
 
 # Evaluation
-def evaluate(X_test, y_test, model):
-    X_test = X_test.to(device)
-    y_test = y_test.to(device)
+def predict(model, radiant_team, dire_team):
+    radiant_team_idx = [hero_to_idx[hero] for hero in radiant_team]
+    dire_team_idx = [hero_to_idx[hero] for hero in dire_team]
+    input_data = [(radiant_team_idx, dire_team_idx)]
+    input_tensor = data_to_tensor(input_data).to(device)  # Make sure the input tensor is on the same device as the model
     with torch.no_grad():
-        outputs = model(X_test)
-        _, predicted = torch.max(outputs.data, 1)
-        accuracy = accuracy_score(y_test, predicted)
-        print(f"Accuracy: {accuracy * 100:.2f}%")
+        outputs = model(input_tensor)  # The input tensor is now on the correct device (GPU)
+        probabilities = torch.softmax(outputs, dim=1)
+        return probabilities.cpu().numpy()[0]
 
 # Load the model with a loading bar
 def load_model_with_loading_bar(model_filename):
@@ -256,14 +260,17 @@ user_choice = input("\nEnter '1' to use the hardcoded trained model, '2' to crea
 
 if user_choice == '1':
     model = load_model_with_loading_bar(model_filename)
+    model = model.to(device)  # Add this line
 elif user_choice == '2':
     model = training_module.train(X_train_tensor, y_train_tensor)
     with open(model_filename, 'wb') as file:
         pickle.dump(model, file)
+    model = model.to(device)  # Add this line
 elif user_choice == '3':
     # Load the saved model and starting_epoch
     starting_epoch = int(input("Enter the starting epoch from 10000: "))
     model = load_model_with_loading_bar(model_filename)
+    model = model.to(device)  # Add this line
 
     # Resume training
     model = training_module.train(X_train_tensor, y_train_tensor, num_epochs=10000, hidden_size=321,
@@ -283,7 +290,7 @@ def predict(model, radiant_team, dire_team):
     with torch.no_grad():
         outputs = model(input_tensor)
         probabilities = torch.softmax(outputs, dim=1)
-        return probabilities.device().numpy()[0]
+        return probabilities.cpu().numpy()[0]
 
 def predict_callback():
     radiant_team = [rt_hero1.get(), rt_hero2.get(), rt_hero3.get(), rt_hero4.get(), rt_hero5.get()]
@@ -291,6 +298,7 @@ def predict_callback():
     probabilities = predict(model, radiant_team, dire_team)
     radiant_win_probability = probabilities[1] * 100
     result_text.set(f"Radiant Win Chance: {radiant_win_probability:.2f}%")
+
 
 root = tk.Tk()
 root.title("Dota 2 Match Predictor")
