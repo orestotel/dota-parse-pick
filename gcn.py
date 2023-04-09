@@ -129,15 +129,12 @@ sys.stdout.write("\r")
 def team_to_graph_data(team):
     # Define a graph for the team with heroes as nodes
     num_nodes = len(team)
-    x = torch.zeros((num_nodes, len(heroes)))
-    for i, hero in enumerate(team):
-        x[i, hero_to_idx[hero]] = 1
+    x = torch.tensor([hero_to_idx[hero] for hero in team], dtype=torch.float) # Change dtype to torch.float
     edge_index = torch.tensor([[i, j] for i in range(num_nodes) for j in range(i)], dtype=torch.long).t().contiguous()
     edge_index = edge_index.view(2, -1)
     data = Data(x=x, edge_index=edge_index)
 
     return data
-
 
 def build_graph_data(X):
     graph_data = []
