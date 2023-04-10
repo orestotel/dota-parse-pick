@@ -4,7 +4,8 @@ import os
 import requests
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 
 # Ensure GPU is available
@@ -51,22 +52,23 @@ if os.path.exists(model_name):
 else:
     model = Sequential([
         Dense(128, activation="relu", input_dim=X_train.shape[1]),
+        Dropout(0.2),
         Dense(64, activation="relu"),
+        Dropout(0.2),
         Dense(32, activation="relu"),
-        Dense(32, activation="relu"),  # Added layers
+        Dropout(0.2),
         Dense(32, activation="relu"),
-        Dense(32, activation="relu"),
-        Dense(32, activation="relu"),
-        Dense(32, activation="relu"),
+        Dropout(0.2),
         Dense(1, activation="sigmoid"),
     ])
 
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
 # Train model
-batch_size = 4096  # Increased batch size
+batch_size = 8192  # Increased batch size
 epochs = int(input("Enter the number of epochs to train: "))
-model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
+early_stopping = EarlyStopping(monitor="val_loss", patience=2)  # Early stopping
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Save model
 model.save(model_name)
@@ -90,3 +92,4 @@ while True:
         print(f"Radiant win probability: {prediction * 100:.2f}%")
     except KeyboardInterrupt:
         break
+
