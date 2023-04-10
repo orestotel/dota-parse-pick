@@ -2,9 +2,10 @@ import requests
 import json
 from tqdm import tqdm
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
-def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file):
+def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_matches):
     matches_url = f"https://api.opendota.com/api/publicMatches?api_key={api_key}&mmr_ascending={min_mmr}"
 
     heroes_url = f"https://api.opendota.com/api/heroes?api_key={api_key}"
@@ -39,6 +40,9 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file):
                 if len(matches) >= n_matches:
                     break
 
+                if match["match_id"] in existing_matches:
+                    continue
+
                 radiant_team = [id_to_hero[int(hero_id)] for hero_id in match["radiant_team"].split(",")]
                 dire_team = [id_to_hero[int(hero_id)] for hero_id in match["dire_team"].split(",")]
 
@@ -58,10 +62,29 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file):
     save_matches_to_file(output_file, matches)
 
 
+def load_existing_match_ids(filepath):
+    with open(filepath, "r") as f:
+        data = json.load(f)
+    return {match["match_id"] for match in data}
+
+
 if __name__ == "__main__":
     api_key = "2a5b8577-d7ee-4ef2-85ca-f15e5c8bdf75"  # Replace with your OpenDota API key
     n_matches = 1750000
     min_mmr = 20
-    output_file = "parse-data/dataset7basic.json"
+    output_file = "parse-data/chewtree.json"
+    existing_matches_file = "parse-data/bubblegum1.json"
+    existing_matches = load_existing_match_ids(existing_matches_file)
 
-    fetch_and_save_matches(api_key, n_matches, min_mmr, output_file)
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(fetch_and_save_matches, api_key, n_matches, min_mmr, output_file, existing_matches)        for _ in range(os.cpu_count())
+        ]
+
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"An error occurred in one of the processes: {e}")
+
+    fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_matches)
