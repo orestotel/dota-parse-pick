@@ -1,11 +1,11 @@
 import json
 import numpy as np
 import os
+import requests
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 # Ensure GPU is available
 if not tf.config.list_physical_devices('GPU'):
@@ -13,13 +13,13 @@ if not tf.config.list_physical_devices('GPU'):
 
 # Load data
 print("Loading data...")
-with open("data.json", "r") as f:
+with open("parse-data/bubblegum1.json", "r") as f:
     data = json.load(f)
+print(f"Number of matches in dataset: {len(data)}")
 
 # Load hero names from opendota
-with open("heroes.json", "r") as f:
-    heroes_data = json.load(f)
-
+print("Fetching heroes from OpenDota...")
+heroes_data = requests.get("https://api.opendota.com/api/heroes").json()
 hero_names = [hero["localized_name"] for hero in heroes_data]
 
 # Preprocess data
@@ -64,8 +64,9 @@ else:
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
 # Train model
+batch_size = 4096  # Increased batch size
 epochs = int(input("Enter the number of epochs to train: "))
-model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
 
 # Save model
 model.save(model_name)
@@ -89,4 +90,3 @@ while True:
         print(f"Radiant win probability: {prediction * 100:.2f}%")
     except KeyboardInterrupt:
         break
-
