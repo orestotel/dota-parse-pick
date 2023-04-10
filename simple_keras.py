@@ -46,28 +46,30 @@ y = np.array(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Create or load model
-model_name = "trainmodel2"
+model_name = "trainmodel_improved"
 if os.path.exists(model_name):
     model = load_model(model_name)
 else:
     model = Sequential([
-        Dense(128, activation="relu", input_dim=X_train.shape[1]),
-        Dropout(0.2),
+        Dense(256, activation="relu", input_dim=X_train.shape[1]),
+        Dropout(0.3),
+        Dense(128, activation="relu"),
+        Dropout(0.3),
         Dense(64, activation="relu"),
-        Dropout(0.2),
+        Dropout(0.3),
         Dense(32, activation="relu"),
-        Dropout(0.2),
-        Dense(32, activation="relu"),
-        Dropout(0.2),
+        Dropout(0.3),
+        Dense(16, activation="relu"),
+        Dropout(0.3),
         Dense(1, activation="sigmoid"),
     ])
 
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
 # Train model
-batch_size = 8192  # Increased batch size
+batch_size = 8192
 epochs = int(input("Enter the number of epochs to train: "))
-early_stopping = EarlyStopping(monitor="val_loss", patience=2)  # Early stopping
+early_stopping = EarlyStopping(monitor="val_loss", patience=2)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Save model
