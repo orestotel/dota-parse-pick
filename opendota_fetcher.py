@@ -1,12 +1,16 @@
-import requests
 import json
+import os
+import requests
 from tqdm import tqdm
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing
 
+def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, process_id):
+    starting_match_offset = int(n_matches / n_processes) * process_id
+    matches_url = f"https://api.opendota.com/api/publicMatches?api_key={api_key}&mmr_ascending={min_mmr}&offset={starting_match_offset}"
 
-def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_matches):
-    matches_url = f"https://api.opendota.com/api/publicMatches?api_key={api_key}&mmr_ascending={min_mmr}"
+    # ... (rest of the function)
+
 
     heroes_url = f"https://api.opendota.com/api/heroes?api_key={api_key}"
     heroes_data = requests.get(heroes_url).json()
@@ -18,30 +22,18 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_ma
         with open(output_file, "w") as f:
             json.dump(matches, f, indent=4)
 
-    error_counter = 0
-    max_errors = 120
-
-    with tqdm(total=n_matches, desc="Fetching matches") as pbar:
+    with tqdm(total=n_matches, desc=f"Fetching matches (Process {process_id})") as pbar:
         while len(matches) < n_matches:
             response = requests.get(matches_url)
             try:
                 new_matches = response.json()
             except json.JSONDecodeError:
-                error_counter += 1
-                if error_counter >= max_errors:
-                    print("Reached maximum allowed errors. Saving gathered data and stopping.")
-                    save_matches_to_file(output_file, matches)
-                    break
-                else:
-                    print(f"Error decoding JSON response. Error count: {error_counter}")
-                    continue
+                print(f"Error decoding JSON response (Process {process_id}).")
+                continue
 
             for match in new_matches:
                 if len(matches) >= n_matches:
                     break
-
-                if match["match_id"] in existing_matches:
-                    continue
 
                 radiant_team = [id_to_hero[int(hero_id)] for hero_id in match["radiant_team"].split(",")]
                 dire_team = [id_to_hero[int(hero_id)] for hero_id in match["dire_team"].split(",")]
@@ -61,30 +53,36 @@ def fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_ma
 
     save_matches_to_file(output_file, matches)
 
+def fetch_parallel(api_key, n_matches, min_mmr, output_file, n_processes):
+    processes = []
+    for i in range(n_processes):
+        process_output_file = f"{output_file[:-5]}_process_{i}.json"
+        process = Process(target=fetch_and_save_matches, args=(api_key, n_matches, min_mmr, process_output_file, i))
+        process.start()
+        processes.append(process)
 
-def load_existing_match_ids(filepath):
-    with open(filepath, "r") as f:
-        data = json.load(f)
-    return {match["match_id"] for match in data}
+    for process in processes:
+        process.join()
 
+
+def combine_files(output_file, process_files):
+    combined_matches = []
+
+    for process_file in process_files:
+        with open(process_file, "r") as f:
+            matches = json.load(f)
+            combined_matches.extend(matches)
+
+    with open(output_file, "w") as f:
+        json.dump(combined_matches, f, indent=4)
 
 if __name__ == "__main__":
     api_key = "2a5b8577-d7ee-4ef2-85ca-f15e5c8bdf75"  # Replace with your OpenDota API key
-    n_matches = 1750000
+    n_matches = 1750000 // 3
     min_mmr = 20
     output_file = "parse-data/chewtree.json"
-    existing_matches_file = "parse-data/bubblegum1.json"
-    existing_matches = load_existing_match_ids(existing_matches_file)
+    n_processes = 3
 
-    with ProcessPoolExecutor() as executor:
-        futures = [
-            executor.submit(fetch_and_save_matches, api_key, n_matches, min_mmr, output_file, existing_matches)        for _ in range(os.cpu_count())
-        ]
-
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"An error occurred in one of the processes: {e}")
-
-    fetch_and_save_matches(api_key, n_matches, min_mmr, output_file, existing_matches)
+    fetch_parallel(api_key, n_matches, min_mmr, output_file, n_processes)
+    process_files = [f"{output_file[:-5]}_process_{i}.json" for i in range(n_processes)]
+    combine_files("parse-data/combined_chewtree.json", process_files)
