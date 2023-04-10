@@ -93,7 +93,7 @@ if __name__ == "__main__":
     api_key = "2a5b8577-d7ee-4ef2-85ca-f15e5c8bdf75"  # Replace with your OpenDota API key
     n_matches = 2000000000 // 1
     min_mmr = 20
-    output_file = "parse-data/chewtree.json"
+    output_file = "/mnt/mydata/parse-data/chewtree.json"
     n_processes = 1
 
     fetch_parallel(api_key, n_matches, min_mmr, output_file, n_processes)
