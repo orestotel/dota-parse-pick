@@ -5,7 +5,8 @@ import numpy as np
 import requests
 import json
 import random
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
 # Load data
 with open("D:\\sofardata\\chewtree_process_0_copy.json", "r") as file:
     data = json.load(file)
